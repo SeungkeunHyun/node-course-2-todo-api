@@ -25,10 +25,14 @@ app.post("/todos", (req, res) => {
         res.send(doc);
     }, e => {
         mongooseCallbackErr(e);
-        res.status(400).send(e.message);
+        res.status(400).send(e);
     });
     console.log(todo);
 });
 app.listen(3000, () => {
     console.log("Started on port 3000");
 });
+
+module.exports = {
+    app
+};
