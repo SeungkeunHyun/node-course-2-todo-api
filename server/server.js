@@ -8,6 +8,7 @@ var {
     mongooseCallback,
     mongooseCallbackErr
 } = require('./db/mongoose');
+const _ = require('lodash');
 
 var {
     Todo
@@ -17,6 +18,7 @@ var {
 } = require("./models/user");
 
 var app = express();
+const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
 app.post("/todos", (req, res) => {
@@ -58,8 +60,21 @@ app.get("/todos/:id", (req, res) => {
     });
 });
 
-app.listen(3000, () => {
-    console.log("Started on port 3000");
+// POST /users
+app.post("/users", (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    var user = new User(body);
+    //User.findByToken()
+    //User.generateAuthToken();
+    user.save().then(userDoc => {
+            return userDoc.generateAuthToken();
+        }).then(token => res.header("x-auth", token).send(user))
+        .catch(e => {
+            res.status(400).send(e);
+        });
+});
+app.listen(port, () => {
+    console.log(`Started on port ${port}`);
 });
 
 module.exports = {
