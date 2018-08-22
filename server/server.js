@@ -3,6 +3,7 @@ require('./config/config');
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs');
 const {
     ObjectID
 } = require("mongodb");
@@ -60,20 +61,6 @@ app.get("/todos/:id", (req, res) => {
     });
 });
 
-// POST /users
-app.post("/users", (req, res) => {
-    var body = _.pick(req.body, ['email', 'password']);
-    var user = new User(body);
-    //User.findByToken()
-    //User.generateAuthToken();
-    user.save().then(userDoc => {
-            return userDoc.generateAuthToken();
-        }).then(token => res.header("x-auth", token).send(user))
-        .catch(e => {
-            res.status(400).send(e);
-        });
-});
-
 app.delete('/todos/:id', (req, res) => {
     var id = req.params.id;
 
@@ -127,10 +114,53 @@ app.patch('/todos/:id', (req, res) => {
 });
 
 
+// POST /users
+app.post("/users", (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    var user = new User(body);
+    //User.findByToken()
+    //User.generateAuthToken();
+    user.save().then(userDoc => {
+            return userDoc.generateAuthToken();
+        }).then(token => res.header("x-auth", token).send(user))
+        .catch(e => {
+            res.status(400).send(e);
+        });
+});
 
 
 app.get('/users/me', authenticate, (req, res) => {
     res.send(req.user);
+});
+
+app.post('/users/login', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    console.log(body);
+    User.findByCredentials(body.email, body.password)
+        .then((user) => {
+            console.log(user);
+            if (!user) {
+                res.status(400).send();
+            }
+            return user.generateAuthToken().then(token => {
+                res.header('x-auth', token).send(user);
+            });
+        }).catch(e => {
+            console.error(e);
+            res.status(400).send();
+        });
+});
+
+app.post('/users', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    var user = new User(body);
+    user.save().then(() => {
+        return user.generateAuthToken();
+    }).then((token) => {
+        res.header('x-auth', token).send(user);
+    }).catch(e => {
+        res.status(400).send(e);
+    });
 });
 
 app.listen(port, () => {
